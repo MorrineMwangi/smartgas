@@ -83,22 +83,14 @@ final class Cloudant {
         }
     }
 
-    /**
-	 * Transforms the Visitor JSON from the DB to the JSON
-	 * the client will expect.
-	 */
-    private function toClientVisitor($couchVisitor) {
-		$clientVisitor = array('id' => $couchVisitor->id);
-		$clientVisitor['name'] = $couchVisitor->value->name;
-		return $clientVisitor;
-	}
+   
 
 	/**
 	 * Creates a view to use in the DB if one does not already exist.
 	 */
 	private function createView() {
 		$allvisitors = array('reduce' => '_count',
-		'map' => 'function(doc){if(doc.name != null){emit(doc.order,{name: doc.name})}}');
+		'map' => 'function(doc){{emit(doc.order,{name: doc.name, customer_name:cname})}}');
 		$views = array('allvisitors' => $allvisitors);
 		$designDoc = array('views' => $views);
 		$this->sag->put('_design/visitors', $designDoc);
@@ -109,13 +101,13 @@ final class Cloudant {
 	 */
 	public function get() {
 		$visitors = array();
-		$obj = $this->sag->get('_design/visitors/_view/allvisitors?reduce=false')->body;
+		$obj = $this->sag->get('_design/visitors/_view/allvisitors?include_docs=true')->body;
 		#error_log("OBJ is $obj->body");
 		$docs = json_decode($obj);
-		foreach ($docs->rows as $row) {
-			$visitors[] = $row->value->name;;
+		foreach ($docs->rows as $row) { 
+			$visitors[] = $row->value;;
 		}
-		return $visitors;
+		return $visitors ;
 	}
 
 	/**
